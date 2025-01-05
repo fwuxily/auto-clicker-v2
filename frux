@@ -1,0 +1,149 @@
+-- Create ScreenGui for the UI
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "AutoClickerUI"
+screenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+
+-- Frame for settings
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 300, 0, 400)
+frame.Position = UDim2.new(0.5, -150, 0.5, -200)
+frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+frame.Visible = false
+frame.Parent = screenGui
+
+-- Title Label
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Size = UDim2.new(1, 0, 0, 40)
+titleLabel.Text = "Auto Clicker Settings"
+titleLabel.TextColor3 = Color3.new(1, 1, 1)
+titleLabel.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
+titleLabel.Font = Enum.Font.GothamBold
+titleLabel.TextSize = 24
+titleLabel.Parent = frame
+
+-- Enable Button
+local enableButton = Instance.new("TextButton")
+enableButton.Size = UDim2.new(1, 0, 0, 50)
+enableButton.Position = UDim2.new(0, 0, 0.1, 0)
+enableButton.Text = "Enable Auto Clicker"
+enableButton.TextColor3 = Color3.new(1, 1, 1)
+enableButton.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
+enableButton.Font = Enum.Font.GothamBold
+enableButton.TextSize = 18
+enableButton.Parent = frame
+
+-- Disable Button
+local disableButton = Instance.new("TextButton")
+disableButton.Size = UDim2.new(1, 0, 0, 50)
+disableButton.Position = UDim2.new(0, 0, 0.2, 0)
+disableButton.Text = "Disable Auto Clicker"
+disableButton.TextColor3 = Color3.new(1, 1, 1)
+disableButton.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
+disableButton.Font = Enum.Font.GothamBold
+disableButton.TextSize = 18
+disableButton.Parent = frame
+
+-- Slider Function
+local function createSlider(labelText, position, parent, minValue, maxValue, defaultValue, callback)
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1, 0, 0, 40)
+    label.Position = position
+    label.Text = labelText .. ": " .. tostring(defaultValue)
+    label.TextColor3 = Color3.new(1, 1, 1)
+    label.BackgroundTransparency = 1
+    label.Font = Enum.Font.Gotham
+    label.TextSize = 18
+    label.Parent = parent
+
+    local sliderFrame = Instance.new("Frame")
+    sliderFrame.Size = UDim2.new(1, 0, 0, 10)
+    sliderFrame.Position = position + UDim2.new(0, 0, 0.1, 0)
+    sliderFrame.BackgroundColor3 = Color3.new(0.3, 0.3, 0.3)
+    sliderFrame.Parent = parent
+
+    local slider = Instance.new("Frame")
+    slider.Size = UDim2.new((defaultValue - minValue) / (maxValue - minValue), 0, 1, 0)
+    slider.BackgroundColor3 = Color3.new(0, 1, 0)
+    slider.Parent = sliderFrame
+
+    slider.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            local connection
+            connection = input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    connection:Disconnect()
+                end
+            end)
+
+            local moveConnection
+            moveConnection = game:GetService("UserInputService").InputChanged:Connect(function(inputChanged)
+                if inputChanged.UserInputType == Enum.UserInputType.MouseMovement or inputChanged.UserInputType == Enum.UserInputType.Touch then
+                    local relativeX = math.clamp(inputChanged.Position.X - sliderFrame.AbsolutePosition.X, 0, sliderFrame.AbsoluteSize.X)
+                    local value = minValue + (relativeX / sliderFrame.AbsoluteSize.X) * (maxValue - minValue)
+                    slider.Size = UDim2.new(relativeX / sliderFrame.AbsoluteSize.X, 0, 1, 0)
+                    label.Text = labelText .. ": " .. string.format("%.1f", value)
+                    callback(value)
+                end
+            end)
+
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    moveConnection:Disconnect()
+                end
+            end)
+        end
+    end)
+end
+
+-- Variables
+local autoClickerEnabled = false
+local interval = 0.1
+local clicksPerSecond = 10
+
+-- Sliders
+createSlider("Interval", UDim2.new(0, 0, 0.4, 0), frame, 0.1, 2, interval, function(value)
+    interval = value
+end)
+
+createSlider("Clicks Per Second", UDim2.new(0, 0, 0.6, 0), frame, 1, 100, clicksPerSecond, function(value)
+    clicksPerSecond = math.floor(value)
+end)
+
+-- Auto Clicker Functionality
+local function startAutoClicker()
+    while autoClickerEnabled do
+        wait(interval)
+        for i = 1, clicksPerSecond do
+            game:GetService("VirtualInputManager"):SendMouseButtonEvent(0, 0, 0, true, nil, 0)
+            game:GetService("VirtualInputManager"):SendMouseButtonEvent(0, 0, 0, false, nil, 0)
+        end
+    end
+end
+
+-- Button Listeners
+enableButton.MouseButton1Click:Connect(function()
+    if not autoClickerEnabled then
+        autoClickerEnabled = true
+        coroutine.wrap(startAutoClicker)()
+    end
+end)
+
+disableButton.MouseButton1Click:Connect(function()
+    autoClickerEnabled = false
+end)
+
+-- Toggle UI Button
+local toggleButton = Instance.new("TextButton")
+toggleButton.Size = UDim2.new(0, 100, 0, 50)
+toggleButton.Position = UDim2.new(0.5, -50, 0.9, -25)
+toggleButton.Text = "Show UI"
+toggleButton.TextColor3 = Color3.new(1, 1, 1)
+toggleButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+toggleButton.Font = Enum.Font.GothamBold
+toggleButton.TextSize = 18
+toggleButton.Parent = screenGui
+
+toggleButton.MouseButton1Click:Connect(function()
+    frame.Visible = not frame.Visible
+    toggleButton.Text = frame.Visible and "Hide UI" or "Show UI"
+end)
