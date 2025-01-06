@@ -23,6 +23,17 @@ titleLabel.Font = Enum.Font.GothamBold
 titleLabel.TextSize = 24
 titleLabel.Parent = frame
 
+-- Credits Label
+local creditsLabel = Instance.new("TextLabel")
+creditsLabel.Size = UDim2.new(1, 0, 0, 30)
+creditsLabel.Position = UDim2.new(0, 0, 0.9, 0)
+creditsLabel.Text = "Made by Frux ( Discord User: wlxu )"
+creditsLabel.TextColor3 = Color3.new(1, 1, 1)
+creditsLabel.BackgroundTransparency = 1
+creditsLabel.Font = Enum.Font.Gotham
+creditsLabel.TextSize = 16
+creditsLabel.Parent = frame
+
 -- Enable Button
 local enableButton = Instance.new("TextButton")
 enableButton.Size = UDim2.new(1, 0, 0, 50)
@@ -44,21 +55,6 @@ disableButton.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
 disableButton.Font = Enum.Font.GothamBold
 disableButton.TextSize = 18
 disableButton.Parent = frame
-
--- Credits Label
-local creditsLabel = Instance.new("TextLabel")
-creditsLabel.Size = UDim2.new(1, 0, 0, 20)
-creditsLabel.Position = UDim2.new(0, 0, 0.95, 0)
-creditsLabel.Text = "Frux made this discord user: wlxu"
-creditsLabel.TextColor3 = Color3.new(1, 1, 1)
-creditsLabel.BackgroundTransparency = 1
-creditsLabel.Font = Enum.Font.Gotham
-creditsLabel.TextSize = 14
-creditsLabel.Parent = frame
-
--- Variables
-local autoClickerEnabled = false
-local clicksPerSecond = 10
 
 -- Slider Function
 local function createSlider(labelText, position, parent, minValue, maxValue, defaultValue, callback)
@@ -112,17 +108,28 @@ local function createSlider(labelText, position, parent, minValue, maxValue, def
     end)
 end
 
--- Add Slider for Click Speed
-createSlider("Clicks Per Second", UDim2.new(0, 0, 0.4, 0), frame, 1, 100, clicksPerSecond, function(value)
+-- Variables
+local autoClickerEnabled = false
+local interval = 0.1
+local clicksPerSecond = 10
+
+-- Sliders
+createSlider("Interval", UDim2.new(0, 0, 0.4, 0), frame, 0.1, 2, interval, function(value)
+    interval = value
+end)
+
+createSlider("Clicks Per Second", UDim2.new(0, 0, 0.6, 0), frame, 1, 100, clicksPerSecond, function(value)
     clicksPerSecond = math.floor(value)
 end)
 
 -- Auto Clicker Functionality
 local function startAutoClicker()
     while autoClickerEnabled do
-        wait(1 / clicksPerSecond)
-        game:GetService("VirtualInputManager"):SendMouseButtonEvent(0, 0, 0, true, nil, 0)
-        game:GetService("VirtualInputManager"):SendMouseButtonEvent(0, 0, 0, false, nil, 0)
+        wait(interval)
+        for i = 1, clicksPerSecond do
+            game:GetService("VirtualInputManager"):SendMouseButtonEvent(0, 0, 0, true, nil, 0)
+            game:GetService("VirtualInputManager"):SendMouseButtonEvent(0, 0, 0, false, nil, 0)
+        end
     end
 end
 
@@ -138,7 +145,7 @@ disableButton.MouseButton1Click:Connect(function()
     autoClickerEnabled = false
 end)
 
--- Toggle UI Button
+-- Toggle UI Button (Movable)
 local toggleButton = Instance.new("TextButton")
 toggleButton.Size = UDim2.new(0, 100, 0, 50)
 toggleButton.Position = UDim2.new(0.5, -50, 0.9, -25)
@@ -149,6 +156,38 @@ toggleButton.Font = Enum.Font.GothamBold
 toggleButton.TextSize = 18
 toggleButton.Parent = screenGui
 
+-- Make toggle button movable
+local dragging = false
+local dragInput, dragStart, startPos
+
+toggleButton.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = toggleButton.Position
+
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+toggleButton.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        local delta = input.Position - dragStart
+        toggleButton.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+
+-- Toggle UI visibility
 toggleButton.MouseButton1Click:Connect(function()
     frame.Visible = not frame.Visible
     toggleButton.Text = frame.Visible and "Hide UI" or "Show UI"
