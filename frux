@@ -49,8 +49,7 @@ disableButton.Parent = frame
 local creditsLabel = Instance.new("TextLabel")
 creditsLabel.Size = UDim2.new(1, 0, 0, 20)
 creditsLabel.Position = UDim2.new(0, 0, 0.95, 0)
-creditsLabel.Text = "Credits: Frux & Draco made this shoutout to frux who did 80% of the work
-discord username is : wlxu"
+creditsLabel.Text = "Frux/Fruxily made this script discord user: wlxu"
 creditsLabel.TextColor3 = Color3.new(1, 1, 1)
 creditsLabel.BackgroundTransparency = 1
 creditsLabel.Font = Enum.Font.Gotham
